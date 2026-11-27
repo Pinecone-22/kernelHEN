@@ -1,6 +1,7 @@
 #pragma once
 
 #include "util.hpp"
+#include "port_kernel_guard.hpp"
 #include <sys/_stdint.h>
 
 extern "C" {
@@ -20,32 +21,52 @@ static constexpr size_t UCRED_SIZE = 0x168;
 
 template <typename T>
 void kread(uintptr_t addr, T *dst) {
+	if (!port_kernel_address_ok(addr, sizeof(T))) {
+		memset(dst, 0, sizeof(T));
+		return;
+	}
 	kernel_copyout(addr, dst, sizeof(T));
 }
 
 template <typename T>
 T kread(uintptr_t addr) {
 	T dst{};
+	if (!port_kernel_address_ok(addr, sizeof(T))) {
+		return dst;
+	}
 	kernel_copyout(addr, &dst, sizeof(T));
 	return dst;
 }
 
 template <unsigned long length>
 void kread(uintptr_t addr, uint8_t(&buf)[length]) {
+	if (!port_kernel_address_ok(addr, length)) {
+		memset(buf, 0, length);
+		return;
+	}
 	kernel_copyout(addr, buf, length);
 }
 
 template <typename T>
 void kwrite(uintptr_t addr, const T& value) {
+	if (!port_kernel_address_ok(addr, sizeof(T))) {
+		return;
+	}
 	kernel_copyin(const_cast<T *>(&value), addr, sizeof(T)); // NOLINT(cppcoreguidelines-pro-type-const-cast)
 }
 
 template <unsigned long length>
 void kwrite(uintptr_t addr, const uint8_t(&buf)[length]) {
+	if (!port_kernel_address_ok(addr, length)) {
+		return;
+	}
 	kernel_copyin(const_cast<uint8_t *>(buf), addr, length); // NOLINT(cppcoreguidelines-pro-type-const-cast)
 }
 
 inline void kwrite(uintptr_t addr, const void *src, size_t length) {
+	if (!port_kernel_address_ok(addr, length)) {
+		return;
+	}
 	kernel_copyin(const_cast<void *>(src), addr, length); // NOLINT(cppcoreguidelines-pro-type-const-cast)
 }
 

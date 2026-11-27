@@ -30,6 +30,9 @@ along with this program; see the file COPYING. If not, see
 #include <sys/signal.h>
 #include <sys/stat.h>
 #include <fstream>
+#include <fcntl.h>
+#include <cerrno>
+#include <cstring>
 #include <unistd.h>
 #include <util.hpp>
 #include <vector>
@@ -1757,6 +1760,22 @@ int OnPress_Hook(MonoObject* Instance, MonoObject* element, MonoObject* e)
         global_conf.toolbox_auto_start = !global_conf.toolbox_auto_start;
 
     }
+    else if (id == "id_kernel_mode_next") {
+        const char* flag = "/user/data/etaHEN/kernel_mode_next";
+        if (if_exists(flag)) {
+            unlink(flag);
+            notify("Kernel mode disabled for the next etaHEN startup");
+        } else {
+            int kfd = open(flag, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+            if (kfd >= 0) {
+                write(kfd, "1\n", 2);
+                close(kfd);
+                notify("Kernel mode armed for the next etaHEN startup.\nThe console will enter rest mode automatically.\nKeep AC power connected and enable USB power in rest mode.");
+            } else {
+                notify("Unable to arm kernel mode: %s", std::strerror(errno));
+            }
+        }
+    }
     else if (id == "id_start_ps5debug_service") {
         pthread_t thr;
         if (pthread_create(&thr, nullptr, load_ps5debug_thr, nullptr) == 0)
@@ -2460,6 +2479,9 @@ int OnPreCreate_Hook(MonoObject* Instance, MonoObject* element) {
     }
     else if (id == "id_toolbox_auto_start") {
         s_MonoText = mono_string_new(Root_Domain, global_conf.toolbox_auto_start ? "1" : "0");
+    }
+    else if (id == "id_kernel_mode_next") {
+        s_MonoText = mono_string_new(Root_Domain, if_exists("/user/data/etaHEN/kernel_mode_next") ? "1" : "0");
     }
     else if (id == "id_debug_jb"){
        s_MonoText = mono_string_new(Root_Domain, global_conf.debug_app_jb_msg ? "1" : "0");

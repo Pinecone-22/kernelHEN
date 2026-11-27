@@ -148,6 +148,8 @@
 
     <toggle_switch id="id_toolbox_auto_start" title="etaHEN Toolbox on Startup" second_title="Toggle toolbox Startup" confirm="If disabled you will have to either re-add the toolbox or change the Startup setting via Itemzflow's settings menu manually, this will NOT disable any auto start plugins" value="0"/>
 
+    <toggle_switch id="id_kernel_mode_next" title="Kernel mode on next boot" second_title="Loads embedded Byepervisor Reborn, enters rest mode automatically, then resumes etaHEN with kernel text writable. 13.00/13.20/13.60 only. Keep USB power enabled in rest mode." confirm="The console will enter rest mode during the next etaHEN startup. A failed resume can power off the console. Keep the console on AC power and enable USB power in rest mode." confirm_phrase="Enable, Cancel" value="0"/>
+
 
        <!-- Credtis -->
     <setting_list id="id_etahen_credit_options" title="About"  second_title="etaHEN Credits, Ko-fi Supporters, and more" style="center" >

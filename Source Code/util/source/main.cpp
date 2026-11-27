@@ -1,5 +1,7 @@
 #include "port_config.hpp"
 #include "port_stage.hpp"
+#include "port_safety.hpp"
+#include "port_supervisor.hpp"
 /* Copyright (C) 2025 etaHEN / LightningMods
 
 This program is free software; you can redistribute it and/or modify it
@@ -103,6 +105,7 @@ bool if_exists(const char* path) {
 }
 
 static void cleanup(void) {
+    port_safety::note_crash("utility", "fatal signal cleanup");
     notify(true, "etaHEN utilities daemon has crashed...\n\nAttemping to recover...");
 
     if (global_conf.FTP)
@@ -234,6 +237,7 @@ int main(void) {
     start_ip_thread();
     port_stage("utility","starting IPC and HTTP");
     pthread_create(&ipc_server, NULL, IPC_loop, NULL);
+    port_supervisor_start();
 
     bool http_ready=IniliatizeHTTP();
     port_result("utility","HTTP library initialized",http_ready,0);

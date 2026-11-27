@@ -1,4 +1,5 @@
 #include "port_toolbox_route.hpp"
+#include "port_safety.hpp"
 #include "port_stage.hpp"
 #include "port_startup_state.hpp"
 /* Copyright (C) 2025 etaHEN / LightningMods
@@ -236,6 +237,7 @@ void sig_handler(int signo) {
         etaHEN_log("Signal handler is disabled, ignoring signal %d", signo);
         return;
     }
+    port_safety::note_crash("daemon", "fatal signal");
     notify(true,
           "etaHEN has crashed ...\n\nPlease send /data/etaHEN/experimental-daemon-crash.log "
           "to the PKG-Zone discord: https://discord.gg/BduZHudWGj");
@@ -361,6 +363,13 @@ int main() {
 
     port_stage("critical","before settings load");
     LoadSettings();
+    if (port_safety::safe_mode()) {
+        global_conf.toolbox_auto_start = false;
+        global_conf.PS5Debug = false;
+        port_safety::append_log(port_safety::kCrashLog, "critical", "safe mode overrides applied");
+        notify(true, "etaHEN safety mode active: Toolbox auto-start and optional services disabled");
+    }
+    port_safety::heartbeat();
     port_stage("critical","settings loaded");
     port_result("critical","setting toolbox_auto_start",global_conf.toolbox_auto_start,0);
     port_result("critical","setting start_opt",global_conf.start_opt,0);
@@ -508,6 +517,8 @@ int main() {
         port_stage("critical","startup acknowledgement could not be published");
     } else port_stage("critical",startup_initialized ? "startup acknowledgement published" : "startup failed; optional payloads blocked");
 #endif
+
+    port_safety::mark_healthy();
 
     // Main loop to keep the process running
     while (true) {

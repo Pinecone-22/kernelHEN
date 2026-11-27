@@ -17,6 +17,7 @@ along with this program; see the file COPYING. If not, see
 #include <string>
 #include <pthread.h>
 #include "error_translator.hpp"
+#include "port_dpi_tools.hpp"
 extern "C" {
 #include "common_utils.h"
 #include <dirent.h>
@@ -805,6 +806,10 @@ static enum MHD_Result dpiv2_on_request(void* cls, struct MHD_Connection* conn,
     post_request_t* req = (post_request_t*)*con_cls;
     enum MHD_Result ret = MHD_NO;
 
+    if (port_dpi_tools_handle(conn, url, method)) {
+        return MHD_YES;
+    }
+
     PlayGoInfo arg3;
     SceAppInstallPkgInfo pkg_info;
     memset(&arg3, 0, sizeof(arg3));
@@ -927,6 +932,7 @@ static enum MHD_Result dpiv2_on_request(void* cls, struct MHD_Connection* conn,
                 "    <div id='result'></div>\n"
                 "    <div class='maintenance'>\n"
                 "      <h3>Maintenance</h3>\n"
+                "      <p class='note'><a href='/tools'>etaHEN Tools: updater and file manager</a></p>\n"
                 "      <button id='clearTmpBtn' class='btn btn-warning'>Clear "
                 "Temporary Files</button>\n"
                 "      <p class='note'>This will delete all temporary PKG files that "

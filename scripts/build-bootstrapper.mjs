@@ -19,10 +19,14 @@ const cardPath=path.join(root,'build/toolbox-card-install.elf');
 const cardHash=createHash('sha256').update(await readFile(cardPath)).digest('hex');
 if(cardManifest.files.find(f=>f.file==='toolbox-card-install.elf')?.sha256!==cardHash)throw Error('Card installer does not match its manifest');
 const assets={fps_native:path.join(root,'build/fps-native/fps-native.elf'),private_watch:path.join(root,'build/private-watch.elf'),daemon:path.join(root,'build/daemon/daemon.elf'),util:path.join(root,'build/util/util.elf'),toolbox_card:cardPath,store_png:path.join(source,'bootstrapper/assets/store.png'),sicon:path.join(source,'bootstrapper/assets/etahen_sicon.png'),webman_icon:path.join(source,'bootstrapper/assets/webMAN.png'),kstuff};
+const reborn=path.join(source,'bootstrapper/assets/byepervisor_reborn.elf');
+try{await readFile(reborn);assets.byepervisor_reborn=reborn;}catch{}
 const embed=path.join(out,'embedded.S');
 if(diagnostic)assets.daemon=path.join(root,diagnosticRoot+'/daemon/daemon.elf');
 if(profile)assets.daemon=path.join(root,'build/startup-profile/daemon/daemon.elf');
-await writeFile(embed,'.section .data\n'+Object.entries(assets).map(([n,p])=>`.balign 16\n.global ${n}_start\n${n}_start:\n.incbin "${p.replaceAll('\\','/')}"\n${n}_end:\n.balign 4\n.global ${n}_size\n${n}_size:\n.long ${n}_end - ${n}_start\n`).join('\n'));
+let embedded='.section .data\n'+Object.entries(assets).map(([n,p])=>`.balign 16\n.global ${n}_start\n${n}_start:\n.incbin "${p.replaceAll('\\','/')}"\n${n}_end:\n.balign 4\n.global ${n}_size\n${n}_size:\n.long ${n}_end - ${n}_start\n`).join('\n');
+if(!assets.byepervisor_reborn)embedded+='\n.balign 16\n.global byepervisor_reborn_start\nbyepervisor_reborn_start:\n.byte 0\n.balign 4\n.global byepervisor_reborn_size\nbyepervisor_reborn_size:\n.long 0\n';
+await writeFile(embed,embedded);
 const files=[embed];for(const dir of ['bootstrapper/source','extern/tiny-json','extern/cJSON'])for(const f of await readdir(path.join(source,dir)))if(/\.(cpp|c|s)$/.test(f)&&!['daemon.c','elfldr.c','pt.c'].includes(f))files.push(path.join(source,dir,f));files.push(path.join(source,'lib/backtrace.cpp'));
 const objects=profile?['elfldr.c.o','pt.c.o'].map(f=>path.join(root,'build/startup-profile',f)):[path.join(root,'build/core/libelfldr-elfldr.c.o'),path.join(root,'build/core/libNineS-pt.c.o')];
 for(const file of files){const obj=path.join(out,path.basename(file)+'.o');run(['cc',...(file.endsWith('.cpp')?cxx:[]),...flags,'-fexceptions','-I',path.join(source,'include'),'-I',path.join(source,'bootstrapper/include'),'-I',path.join(source,'libelfldr/include'),'-c',file,'-o',obj]);objects.push(obj);console.log('Compiled',path.basename(file));}
