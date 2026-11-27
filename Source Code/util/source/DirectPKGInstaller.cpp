@@ -17,9 +17,9 @@ along with this program; see the file COPYING. If not, see
 #include <string>
 #include <pthread.h>
 #include "error_translator.hpp"
-#include "port_dpi_tools.hpp"
 extern "C" {
 #include "common_utils.h"
+#include "port_dpi_tools.hpp"
 #include <dirent.h>
 #include <microhttpd.h>
 #include <signal.h>
