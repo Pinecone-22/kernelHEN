@@ -2,11 +2,6 @@
   "description": "External binary inputs used in the user-tested build. Obtain matching upstream inputs; these files are not committed.",
   "inputs": [
     {
-      "path": "Source Code/bootstrapper/assets/kstuff.elf",
-      "bytes": 1927240,
-      "sha256": "6c3758c2cc84e3aa7e3c41952371fd04e641647d46d03f8d4bea2ab77c16ecf5"
-    },
-    {
       "path": "Source Code/daemon/assets/ps5debug.elf",
       "bytes": 4059688,
       "sha256": "949b0e6e0fe3f24f4a820319fd76d9ccb92f9770cbb1a64b09a8eca5c1fc9ff3"

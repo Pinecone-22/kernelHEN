@@ -79,8 +79,6 @@ along with this program; see the file COPYING. If not, see
  pid_t elfldr_spawn(const char* cwd, int stdio, uint8_t* elf, const char* name);
  int sceKernelMprotect(void* addr, size_t len, int prot);
 
- extern uint8_t kstuff_start[];
- extern const unsigned int kstuff_size;
  extern uint8_t byepervisor_reborn_start[];
  extern const unsigned int byepervisor_reborn_size;
 #ifdef ETAHEN_PORT_1360
@@ -429,75 +427,6 @@ static void cleanup(void);
     }
 }
 
-  bool is_elf_header(uint8_t* data)
-  {
-      uint8_t header[] = { 0x7f, 'E', 'L', 'F' };
-
-      return !memcmp(data, header, 4);
-  }
-
-
-  uint8_t* get_kstuff_address(bool& require_cleanup) {
-#ifdef ETAHEN_PORT_1360
-      // A leftover /data/etaHEN/kstuff.elf may target an older firmware.
-      // This build pins the embedded kstuff 1.15-dr-test3-stable by SHA256.
-      require_cleanup = false;
-      return kstuff_start;
-#else
-      const char* path = "/data/etaHEN/kstuff.elf";
-      long offset = 0;
-      off_t size;
-      uint8_t* address;
-      int fd;
-
-      if (!if_exists(path)) {
-          goto embedded_kstuff;
-      }
-
-      fd = open(path, O_RDONLY);
-      if (fd <= 0) {
-          goto embedded_kstuff;
-      }
-
-      size = lseek(fd, 0, SEEK_END);
-      address = (uint8_t*)malloc(size);
-
-      if (!address) {
-          goto close_fd;
-      }
-
-      lseek(fd, 0, SEEK_SET);
-
-      while (offset != size) {
-          int n = read(fd, address + offset, size - offset);
-
-          if (n <= 0)
-          {
-              goto free_mem;
-          }
-
-          offset += n;
-      }
-
-      if (!is_elf_header(address)) {
-          notify( "Kstuff '%s' doesn't have ELF header.", path);
-          goto free_mem;
-      }
-
-      require_cleanup = true;
-      notify("Loading kstuff from: %s", path);
-      return address;
-
-  free_mem:
-      free(address);
-  close_fd:
-      close(fd);
-  embedded_kstuff:
-      require_cleanup = false;
-      return kstuff_start;
-#endif
-  }
- 
   static bool run_hypervisor_chain(const OrbisKernelSwVersion& sys_ver) {
     const unsigned major = (sys_ver.version >> 24) & 0xff;
     const unsigned minor = (sys_ver.version >> 16) & 0xff;
@@ -839,9 +768,6 @@ bool sceKernelIsTestKit() {
   return if_exists("/system/priv/lib/libSceDeci5Ttyp.sprx");
 }
 #define PUBLIC_TEST 0
-#ifdef ETAHEN_PORT_1360
-#include "port_kstuff.hpp"
-#endif
 #define EXPIRE_YEAR 2026
 #define EXPIRE_MONTH 1
 #define EXPIRE_DAY 1
@@ -860,7 +786,7 @@ int main(void) {
   }
   const auto* diagnostic_profile=snipers_firmware_profile(kernel_get_fw_version());
   char profile_detail[512];
-  snprintf(profile_detail,sizeof profile_detail,"profile=%s allproc=%lx security=%lx rootvnode=%lx textDelta=%lx sysentvec=%lx sysentvecPs4=%lx crypt=%lx sysents=%lx sysentsPs4=%lx pager=%lx kstuff=1.15-dr-test3-stable",
+  snprintf(profile_detail,sizeof profile_detail,"profile=%s allproc=%lx security=%lx rootvnode=%lx textDelta=%lx sysentvec=%lx sysentvecPs4=%lx crypt=%lx sysents=%lx sysentsPs4=%lx pager=%lx kstuff=none",
     diagnostic_profile->name,diagnostic_profile->allproc,diagnostic_profile->security,diagnostic_profile->rootvnode,diagnostic_profile->textDelta,diagnostic_profile->sysentvec,diagnostic_profile->sysentvecPs4,diagnostic_profile->cryptSingletonArray,diagnostic_profile->sysents,diagnostic_profile->sysentsPs4,diagnostic_profile->pagerTable);
   port_stage("bootstrap",profile_detail);
   const pid_t existing_etahen = find_pid("etaHEN");
@@ -1058,64 +984,8 @@ int main(void) {
     }
   }
 
-#if 1
-  port_stage("bootstrap","update unmount finished; before kstuff inspection");
-  char buz[100] = { 0 };
-  // Load kstuff if needed
-  bool dont_load_kstuff = (if_exists("/mnt/usb0/no_kstuff") || if_exists("/data/etaHEN/no_kstuff"));
-#ifdef ETAHEN_PORT_1360
-  const auto kstuff_snapshot=port_read_kstuff_state();
-  const auto kstuff_state=kstuff_snapshot.classify(KERNEL_ADDRESS_DATA_BASE);
-  char state_detail[192];snprintf(state_detail,sizeof(state_detail),"kstuff state=%d readable=%d native=%016lx compat=%016lx crypt=%04x/%04x",(int)kstuff_state,kstuff_snapshot.readable,kstuff_snapshot.native,kstuff_snapshot.compat,kstuff_snapshot.xts,kstuff_snapshot.hmac);
-  port_stage("bootstrap",state_detail);
-  const bool kstuff_running = find_pid("kstuff") > 0 || kstuff_state==PortKstuffState::Installed;
-  if(!dont_load_kstuff&&!kstuff_running&&kstuff_state==PortKstuffState::Unknown){
-      notify("etaHEN stopped: existing kstuff state is inconclusive; no duplicate payload loaded");
-      port_stage("bootstrap","stopped before kstuff load: unknown kernel hook state");
-      return 1;
-  }
-#else
-  const bool kstuff_running = false;
-#endif
-  port_stage("bootstrap",kstuff_running?"resident kstuff found":"no resident kstuff found");
-  if (dont_load_kstuff) {
-      notify("kstuff loading disabled via file, non-payload homebrew and PS4 FPKGs will be disabled");
-      klog_puts("kstuff loading disabled in config.ini or no_kstuff file found");
-  }
-  if (!dont_load_kstuff && !kstuff_running && sys_ver.version >= 0x3000000) {
-      port_stage("bootstrap","before spawning kstuff");
-      //notify("Loading kstuff ...");
-
-      bool cleanup_kstuff = false;
-      uint8_t* kstuff_address = get_kstuff_address(cleanup_kstuff);
-
-      int kstuff_pid=elfldr_spawn("/", STDOUT_FILENO, kstuff_address, "kstuff");
-      port_result("bootstrap","kstuff spawn pid",kstuff_pid,kstuff_pid<0?errno:0);
-      if (kstuff_pid >= 0) {
-          int wait = 0;
-          bool kstuff_not_loaded = true;
-          for (wait = 0; wait < 100; wait++) {
-              kstuff_not_loaded = sceKernelMprotect(&buz[0], 100, 0x7) < 0;
-              if (!kstuff_not_loaded) break;
-              usleep(50000);
-          }
-
-          port_result("bootstrap","kstuff readiness",kstuff_not_loaded?-1:0,0);
-          port_result("bootstrap","kstuff wait ms",wait*50,0);
-          if (!kstuff_not_loaded)
-              klog_puts("kstuff loaded");
-          else
-              notify("Failed to load kstuff, kstuff will be unavailable");
-
-          if (cleanup_kstuff) {
-              free(kstuff_address);
-          }
-      }
-      else {
-          notify("Failed to load kstuff, kstuff will be unavailable");
-      }
-  }
-#endif
+  // KStuff is no longer loaded. fPKG support lives in KernelHEN.
+  port_stage("bootstrap","kstuff disabled; KernelHEN handles fPKG");
 
   klog_printf("Starting Utility etaHEN services ...");
   port_stage("bootstrap","before utility spawn");
