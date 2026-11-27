@@ -430,7 +430,7 @@ static void cleanup(void);
   static bool run_hypervisor_chain(const OrbisKernelSwVersion& sys_ver) {
     const unsigned major = (sys_ver.version >> 24) & 0xff;
     const unsigned minor = (sys_ver.version >> 16) & 0xff;
-    const bool supported = major == 13 && (minor == 0x00 || minor == 0x20 || minor == 0x60);
+    const bool supported = major == 0x13 && (minor == 0x00 || minor == 0x20 || minor == 0x60);
 
     if (!supported) {
       notify("Kernel mode skipped: Byepervisor Reborn supports 13.00, 13.20 and 13.60 only");
