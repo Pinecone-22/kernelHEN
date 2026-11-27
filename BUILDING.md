@@ -20,8 +20,15 @@ The generated ShellUI, FPS service, daemon, utility and card installer are rebui
 $env:ZIG = 'C:\path\to\zig.exe'
 $env:PS5_PAYLOAD_SDK = 'C:\path\to\ps5-payload-sdk'
 node scripts/check-build-inputs.mjs
+node scripts/build-byepervisor-reborn.mjs
 node scripts/build-all.mjs
 ```
+
+`build-byepervisor-reborn.mjs` builds the vendored
+`Source Code/bootstrapper/ByepervisorReborn/` source into
+`Source Code/bootstrapper/assets/byepervisor_reborn.elf`. Kernel mode remains
+disabled at runtime if that asset is absent or the firmware is not one of
+13.00/13.20/13.60.
 
 Output: `build/etaHEN-multifw-experimental.elf` and `build/manifest.json`. The full build compiles the ABI probe, runs the regression tests, builds the component source and embeds the card installer and upstream assets. `node --test tests/*.test.mjs` runs the checks separately. Diagnostic helpers in `port/` are developer tools and are not a second payload to load during normal startup.
 
