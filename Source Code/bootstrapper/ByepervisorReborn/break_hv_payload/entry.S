@@ -1,7 +1,6 @@
 .intel_syntax noprefix
 .text
 .global shellcode
-.type shellcode, @function
 
 // page+0x000 - code
 // page+0x400 - scratch area
@@ -23,4 +22,3 @@ shellcode:
     pop     rsi
     pop     rbx
     jmp     rcx                         // jump to init_cb
-.size shellcode, .-shellcode

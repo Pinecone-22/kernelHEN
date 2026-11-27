@@ -52,19 +52,14 @@
       "sha256": "d84ca33e966555f8c35940c097c491773b58a69af8438966e98ecff1cd11435c"
     },
     {
-      "path": "dependencies/lib/libcrypto.a",
-      "bytes": 13733936,
-      "sha256": "e8fe42a8159e30d4c8a2ab1be74ee10b119c3f547265e3cc872bdaecda620944"
-    },
-    {
-      "path": "dependencies/lib/libssl.a",
-      "bytes": 2479388,
-      "sha256": "db58e5bb95ee7dba9e83d192dbd3258b976956c05bb1876e1f7a0763d512807e"
+      "path": "Source Code/util/assets/elfldr.elf",
+      "bytes": 255224,
+      "sha256": "65fb487ce8b3777725ed59024b4d1b4a14d750e88b153c1944788a80787982fd"
     },
     {
       "path": "dependencies/lib/libsqlite3.a",
-      "bytes": 5364206,
-      "sha256": "38662df0bc8403007bf08f89ef3e5394df3d8c7cdcdcf5d3f0325f25ebb40373"
+      "bytes": 7657700,
+      "sha256": "6da34df5ee8b2e981273cdef5ccb38a978a680e4fc271887474bcea5f53bda41"
     }
   ]
 }

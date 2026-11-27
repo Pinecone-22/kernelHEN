@@ -10,32 +10,41 @@ await mkdir(outDir,{recursive:true});
 await mkdir(path.dirname(asset),{recursive:true});
 
 const breakSrc=path.join(dir,'break_hv_payload');
-const breakElf=path.join(outDir,'break_hv.elf');
-const breakBin=path.join(outDir,'break_hv.bin');
-const breakObj=path.join(outDir,'break_hv.o');
-const entryObj=path.join(outDir,'entry.o');
-const breakFlags=['-target','x86_64-linux-none','-O2','-ffreestanding','-nostdlib','-fno-pic','-fno-plt',
- '-fno-stack-protector','-fno-stack-clash-protection','-fomit-frame-pointer','-fno-asynchronous-unwind-tables',
- '-fcf-protection=none','-fno-jump-tables','-mgeneral-regs-only','-mno-red-zone','-Wall','-Wextra'];
+const header=path.join(breakSrc,'break_hv.h');
 
-const cc=(args)=>spawnSync(zig,['cc',...args],{cwd:dir,encoding:'utf8',maxBuffer:16*1024**2});
-let r=cc([...breakFlags,'-c',path.join(breakSrc,'break_hv.c'),'-o',breakObj]);
-if(r.status!==0)throw Error((r.stdout||'')+(r.stderr||''));
-r=cc(['-c',path.join(breakSrc,'entry.S'),'-o',entryObj]);
-if(r.status!==0)throw Error((r.stdout||'')+(r.stderr||''));
-r=spawnSync(zig,['ld.lld','-nostdlib','-no-pie','-T',path.join(breakSrc,'link.ld'),entryObj,breakObj,'-o',breakElf],
- {cwd:dir,encoding:'utf8',maxBuffer:16*1024**2});
-if(r.status!==0)throw Error((r.stdout||'')+(r.stderr||''));
-r=spawnSync(zig,['objcopy','-O','binary',breakElf,breakBin],{cwd:dir,encoding:'utf8',maxBuffer:16*1024**2});
-if(r.status!==0)throw Error((r.stdout||'')+(r.stderr||''));
+// The checked-in header is the validated break_hv payload. Regenerating it
+// changes the hypervisor shellcode bytes, so only do that explicitly.
+if(process.env.REBUILD_BREAK_HV==='1'){
+ const breakElf=path.join(outDir,'break_hv.elf');
+ const breakBin=path.join(outDir,'break_hv.bin');
+ const breakObj=path.join(outDir,'break_hv.o');
+ const entryObj=path.join(outDir,'entry.o');
+ const breakFlags=['-target','x86_64-linux-none','-O2','-ffreestanding','-nostdlib','-fno-pic','-fno-plt',
+  '-fno-stack-protector','-fno-stack-clash-protection','-fomit-frame-pointer','-fno-asynchronous-unwind-tables',
+  '-fcf-protection=none','-fno-jump-tables','-mgeneral-regs-only','-mno-red-zone','-Wall','-Wextra'];
 
-const payload=await readFile(breakBin);
-const rows=[];
-for(let i=0;i<payload.length;i+=16){
- rows.push('  '+[...payload.subarray(i,i+16)].map(x=>'0x'+x.toString(16).padStart(2,'0')).join(', '));
+ const cc=(args)=>spawnSync(zig,['cc',...args],{cwd:dir,encoding:'utf8',maxBuffer:16*1024**2});
+ let r=cc([...breakFlags,'-c',path.join(breakSrc,'break_hv.c'),'-o',breakObj]);
+ if(r.status!==0)throw Error((r.stdout||'')+(r.stderr||''));
+ r=cc(['-target','x86_64-linux-none','-c',path.join(breakSrc,'entry.S'),'-o',entryObj]);
+ if(r.status!==0)throw Error((r.stdout||'')+(r.stderr||''));
+ r=spawnSync(zig,['ld.lld','-nostdlib','-no-pie','-T',path.join(breakSrc,'link.ld'),entryObj,breakObj,'-o',breakElf],
+  {cwd:dir,encoding:'utf8',maxBuffer:16*1024**2});
+ if(r.status!==0)throw Error((r.stdout||'')+(r.stderr||''));
+ r=spawnSync(zig,['objcopy','-O','binary',breakElf,breakBin],{cwd:dir,encoding:'utf8',maxBuffer:16*1024**2});
+ if(r.status!==0)throw Error((r.stdout||'')+(r.stderr||''));
+
+ const payload=await readFile(breakBin);
+ const rows=[];
+ for(let i=0;i<payload.length;i+=16){
+  rows.push('  '+[...payload.subarray(i,i+16)].map(x=>'0x'+x.toString(16).padStart(2,'0')).join(', '));
+ }
+ await writeFile(header,
+  `unsigned char break_hv[] = {\n${rows.join(',\n')}\n};\nunsigned int break_hv_len = ${payload.length};\n`);
+}else{
+ const text=await readFile(header,'utf8');
+ if(!text.includes('break_hv_len'))throw Error('Invalid checked-in break_hv_payload/break_hv.h');
 }
-await writeFile(path.join(breakSrc,'break_hv.h'),
- `unsigned char break_hv[] = {\n${rows.join(',\n')}\n};\nunsigned int break_hv_len = ${payload.length};\n`);
 
 const files=['main.c','kdlsym.c','khook.c','paging.c','util.c'];
 const objects=[];

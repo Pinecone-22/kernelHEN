@@ -30,7 +30,7 @@
 
 uint64_t g_hv_base_pa;
 
-extern "C" int sceSystemStateMgrEnterStandby(void);
+int sceSystemStateMgrEnterStandby(void);
 
 static void write_state(const char* path, const char* text)
 {

@@ -8,9 +8,10 @@ This source repository excludes compilers, SDKs, static libraries and upstream p
 
 - `Source Code/bootstrapper/assets/kstuff.elf`: [EchoStretch/kstuff 1.15-dr-test3-stable](https://github.com/EchoStretch/kstuff/releases/tag/1.15-dr-test3-stable).
 - `Source Code/daemon/assets/ps5debug.elf`: [Pharaoh2k/ps5debug-NG 1.3.2](https://github.com/Pharaoh2k/ps5debug-NG/releases).
-- `Source Code/daemon/assets/ps5-app-dumper.elf`: [EchoStretch/ps5-app-dumper 1.15-dr-test3-stable](https://github.com/EchoStretch/ps5-app-dumper/releases).
-- `Source Code/lib/`: matching PS5 builds of `libz.a`, `libcurl.a`, `libwolfssl.a`, `libminizip.a`, `libmicrohttpd.a`, `libpsl.a`, and `libzstd.a` from the upstream etaHEN build inputs. Host Windows/Linux archives cannot substitute for these.
-- `dependencies/lib/`: PS5 SDK homebrew builds of `libcrypto.a`, `libssl.a` and `libsqlite3.a`. The tested OpenSSL build was 3.5.2. The [PS5 payload SDK packages](https://github.com/ps5-payload-dev) provide the PS5 cross-build ecosystem; the manifest records the exact archives used locally.
+- `Source Code/daemon/assets/ps5-app-dumper.elf`: [EchoStretch/ps5-app-dumper v1.11](https://github.com/EchoStretch/ps5-app-dumper/releases/tag/v1.11).
+- `Source Code/util/assets/elfldr.elf`: the upstream `Source Code/lib/elfldr.bin` payload from [etaHEN/etaHEN](https://github.com/etaHEN/etaHEN), copied under the name the utility expects.
+- `Source Code/lib/`: matching PS5 builds of `libz.a`, `libcurl.a`, `libwolfssl.a`, `libminizip.a`, `libmicrohttpd.a`, `libpsl.a`, and `libzstd.a` from the [upstream etaHEN build inputs](https://github.com/etaHEN/etaHEN/tree/main/Source%20Code/lib). Host Windows/Linux archives cannot substitute for these. OpenSSL is not linked.
+- `dependencies/lib/libsqlite3.a`: built from the [SQLite amalgamation](https://www.sqlite.org/download.html) by `node scripts/build-sqlite.mjs`; set `SQLITE_AMALGAMATION` to the extracted amalgamation directory.
 
 The generated ShellUI, FPS service, daemon, utility and card installer are rebuilt from this repository. Do not supply stale generated ELFs. `libNidResolver` source is already vendored; no submodule initialization is required.
 
@@ -19,6 +20,8 @@ The generated ShellUI, FPS service, daemon, utility and card installer are rebui
 ```powershell
 $env:ZIG = 'C:\path\to\zig.exe'
 $env:PS5_PAYLOAD_SDK = 'C:\path\to\ps5-payload-sdk'
+$env:SQLITE_AMALGAMATION = 'C:\path\to\sqlite-amalgamation'
+node scripts/build-sqlite.mjs
 node scripts/check-build-inputs.mjs
 node scripts/build-byepervisor-reborn.mjs
 node scripts/build-all.mjs
@@ -28,7 +31,9 @@ node scripts/build-all.mjs
 `Source Code/bootstrapper/ByepervisorReborn/` source into
 `Source Code/bootstrapper/assets/byepervisor_reborn.elf`. Kernel mode remains
 disabled at runtime if that asset is absent or the firmware is not one of
-13.00/13.20/13.60.
+13.00/13.20/13.60. The check-in `break_hv_payload/break_hv.h` is the validated
+hypervisor shellcode; set `REBUILD_BREAK_HV=1` only when intentionally
+regenerating it from `break_hv.c` and `entry.S`.
 
 Output: `build/etaHEN-multifw-experimental.elf` and `build/manifest.json`. The full build compiles the ABI probe, runs the regression tests, builds the component source and embeds the card installer and upstream assets. `node --test tests/*.test.mjs` runs the checks separately. Diagnostic helpers in `port/` are developer tools and are not a second payload to load during normal startup.
 
