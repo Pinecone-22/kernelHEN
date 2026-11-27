@@ -8,13 +8,14 @@ The upstream README is preserved in [UPSTREAM-README.md](UPSTREAM-README.md), in
 
 - [PS5 payload SDK v0.43](https://github.com/ps5-payload-dev/sdk/tree/v0.43), John TÃ¶rnblom and contributors: runtime/linker support under GPL-3.0-or-later; individual FreeBSD headers and other components retain their notices.
 - [Zig 0.14.1](https://ziglang.org/download/0.14.1/): compiler and linker toolchain, distributed separately.
-- [kstuff-lite v1.11](https://github.com/EchoStretch/kstuff-lite): bundled runtime input in the tested build, by Echo Stretch and upstream kstuff contributors, including sleirsgoevy. Obtain its source and license from its upstream release/tree.
+- [kstuff 1.15-dr-test3-stable](https://github.com/EchoStretch/kstuff): bundled runtime input in the tested build, by Echo Stretch and upstream kstuff contributors, including sleirsgoevy. Obtain its source and license from its upstream release/tree.
 - [PS5Debug-NG 1.3.2](https://github.com/Pharaoh2k/ps5debug-NG): Services payload, building on PS5Debug by CTN and SiSTR0 and the PS4Debug lineage. Retains its upstream license.
-- [PS5 app dumper v1.11](https://github.com/EchoStretch/ps5-app-dumper): upstream daemon dependency. Retains its upstream license.
+- [PS5 app dumper v1.11](https://github.com/EchoStretch/ps5-app-dumper/releases/tag/v1.11): upstream daemon dependency. Retains its upstream license.
+- [ps5-payload-dev/elfldr](https://github.com/ps5-payload-dev/elfldr): the `elfldr` payload embedded by the utility. Retains its upstream license.
 - Native PS5 FPS sampling is adapted from OnionHEN; the PS4 counter is rebuilt from source. The unused legacy `fps.prx` is no longer embedded.
 - [libNidResolver](https://github.com/astrelsky/libNidResolver), astrelsky: vendored source retains its LICENSE.
 - Vendored tiny-json, cJSON, pugixml and other source/header libraries retain their in-file or directory license notices.
-- Linked third-party libraries include zlib, curl, wolfSSL, minizip, libmicrohttpd, libpsl, Zstandard, OpenSSL and SQLite. Their static archives are external build inputs, not committed project source. Preserve their individual licenses when distributing a linked binary.
+- Linked third-party libraries include zlib, curl, wolfSSL, minizip, libmicrohttpd, libpsl, Zstandard and SQLite. Their static archives are external build inputs, not committed project source. Preserve their individual licenses when distributing a linked binary.
 
 ## Implementation references
 

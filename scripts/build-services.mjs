@@ -26,7 +26,7 @@ for(let file of files){const object=path.join(out,path.relative(source,file).rep
 }
 const libraries={fps_elf:['kernel','SceGnmDriver'],daemon:['ScePad','SceSystemService','SceNotification','SceNet','SceRegMgr','SceSysmodule','SceUserService','SceNetCtl','SceSysCore','kernel_sys','SceAppInstUtil'],util:['SceLibcInternal','SceSystemService','SceNet','SceSysmodule','SceUserService','SceNetCtl','SceSysCore','ScePad','SceVideoOut','kernel_sys','SceAppInstUtil','SceHttp2','SceSsl']}[requested];
 const local=['libhijacker','libNidResolver','libNineS','libSelfDecryptor','libelfldr'].map(n=>path.join(root,'build/core/'+n+'.a'));
-const external=requested==='util'?['z','curl','wolfssl','minizip','microhttpd','psl','zstd','crypto','ssl']:[];
+const external=requested==='util'?['z','curl','wolfssl','minizip','microhttpd','psl','zstd']:[];
 const elf=path.join(out,requested+'.elf');
 try{run(['ld.lld','--no-dependent-libraries','-pie','--hash-style=gnu','-z','max-page-size=0x4000','-T',path.join(sdk,'ldscripts/elf_x86_64.x'),...objects,path.join(sdk,'target/lib/crt1.o'),'-L',path.join(sdk,'target/lib'),'-L',path.join(root,'dependencies/lib'),'-L',path.join(source,'lib'),'--start-group',...local,...external.map(l=>'-l'+l),...['c++','c++abi','unwind','c'].map(l=>path.join(sdk,'target/lib/lib'+l+'.a')),'-ldl','--end-group','--no-as-needed',...libraries.map(l=>'-l'+l),'-lSceLibcInternal','-lSceNet','-o',elf]);}catch(e){await writeFile(path.join(out,'failure.txt'),e.message);console.error(e.message.slice(-9500));process.exit(1);}
 if(requested==='fps_elf')await copyFile(elf,path.join(source,'daemon/assets/fps_elf.elf'));

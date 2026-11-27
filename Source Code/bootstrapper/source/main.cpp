@@ -65,6 +65,7 @@ along with this program; see the file COPYING. If not, see
  #include <util.hpp>
  #include "port_config.hpp"
  #include "port_stage.hpp"
+ #include "port_safety.hpp"
  #include <freebsd-helper.h>
  
  extern "C" {
@@ -80,6 +81,8 @@ along with this program; see the file COPYING. If not, see
 
  extern uint8_t kstuff_start[];
  extern const unsigned int kstuff_size;
+ extern uint8_t byepervisor_reborn_start[];
+ extern const unsigned int byepervisor_reborn_size;
 #ifdef ETAHEN_PORT_1360
  extern uint8_t toolbox_card_start[];
 #endif
@@ -437,7 +440,7 @@ static void cleanup(void);
   uint8_t* get_kstuff_address(bool& require_cleanup) {
 #ifdef ETAHEN_PORT_1360
       // A leftover /data/etaHEN/kstuff.elf may target an older firmware.
-      // This build pins the embedded kstuff-lite v1.11 by SHA256.
+      // This build pins the embedded kstuff 1.15-dr-test3-stable by SHA256.
       require_cleanup = false;
       return kstuff_start;
 #else
@@ -495,6 +498,51 @@ static void cleanup(void);
 #endif
   }
  
+  static bool run_hypervisor_chain(const OrbisKernelSwVersion& sys_ver) {
+    const unsigned major = (sys_ver.version >> 24) & 0xff;
+    const unsigned minor = (sys_ver.version >> 16) & 0xff;
+    const bool supported = major == 13 && (minor == 0x00 || minor == 0x20 || minor == 0x60);
+
+    if (!supported) {
+      notify("Kernel mode skipped: Byepervisor Reborn supports 13.00, 13.20 and 13.60 only");
+      return false;
+    }
+
+    if (byepervisor_reborn_size == 0) {
+      notify("Kernel mode skipped: embedded Byepervisor Reborn is not built");
+      return false;
+    }
+
+    unlink("/data/etaHENbin/hypervisor_ready");
+    unlink("/data/etaHENbin/hypervisor_failed");
+    port_safety::mark_kernel_mode_active(false);
+
+    notify("Kernel mode: loading Byepervisor Reborn\nConsole will enter rest mode automatically\nResume continues automatically");
+    int pid = elfldr_spawn("/", STDERR_FILENO, byepervisor_reborn_start, "Byepervisor Reborn");
+    port_result("bootstrap", "hypervisor spawn pid", pid, pid < 0 ? errno : 0);
+    if (pid < 0) {
+      notify("Kernel mode failed: Byepervisor Reborn could not start");
+      return false;
+    }
+
+    for (int wait = 0; wait < 180; wait++) {
+      if (port_safety::exists("/data/etaHENbin/hypervisor_ready")) {
+        port_safety::mark_kernel_mode_active(true);
+        port_safety::append_log(port_safety::kCrashLog, "hypervisor", "Byepervisor Reborn ready");
+        notify("Kernel mode active: hypervisor defeated; kernel text is writable");
+        return true;
+      }
+      if (port_safety::exists("/data/etaHENbin/hypervisor_failed")) {
+        notify("Kernel mode failed: rest-mode resume did not complete");
+        return false;
+      }
+      sleep(1);
+    }
+
+    notify("Kernel mode timed out; continuing in userland mode");
+    return false;
+  }
+
  bool if_exists(const char *path) {
    struct stat buffer;
    return (stat(path, &buffer) == 0);
@@ -517,6 +565,7 @@ static void cleanup(void);
       sock.fd = -1;
     }
   
+    port_safety::note_crash("bootstrap", "fatal signal cleanup");
     // Notify user about cleanup
     notify("etaHEN has been cleaned up.");
   
@@ -811,7 +860,7 @@ int main(void) {
   }
   const auto* diagnostic_profile=snipers_firmware_profile(kernel_get_fw_version());
   char profile_detail[512];
-  snprintf(profile_detail,sizeof profile_detail,"profile=%s allproc=%lx security=%lx rootvnode=%lx textDelta=%lx sysentvec=%lx sysentvecPs4=%lx crypt=%lx sysents=%lx sysentsPs4=%lx pager=%lx kstuff=v1.11",
+  snprintf(profile_detail,sizeof profile_detail,"profile=%s allproc=%lx security=%lx rootvnode=%lx textDelta=%lx sysentvec=%lx sysentvecPs4=%lx crypt=%lx sysents=%lx sysentsPs4=%lx pager=%lx kstuff=1.15-dr-test3-stable",
     diagnostic_profile->name,diagnostic_profile->allproc,diagnostic_profile->security,diagnostic_profile->rootvnode,diagnostic_profile->textDelta,diagnostic_profile->sysentvec,diagnostic_profile->sysentvecPs4,diagnostic_profile->cryptSingletonArray,diagnostic_profile->sysents,diagnostic_profile->sysentsPs4,diagnostic_profile->pagerTable);
   port_stage("bootstrap",profile_detail);
   const pid_t existing_etahen = find_pid("etaHEN");
@@ -937,11 +986,20 @@ int main(void) {
   mkdir("/data/etaHEN/daemons", 0777);
   mkdir("/data/etaHEN/assets", 0777);
   mkdir("/data/etaHEN/games", 0777);
+
+  port_safety::boot_begin();
+  const bool safety_mode = port_safety::safe_mode();
+  const bool kernel_mode_request = port_safety::kernel_mode_requested();
+  if (safety_mode) {
+    notify("etaHEN safety mode: plugins and risky services are disabled for this boot");
+    port_safety::append_log(port_safety::kCrashLog, "safety", "boot continuing in safe mode");
+  }
+
 #ifdef ETAHEN_PORT_1360
   // Keep other etaHEN releases' configuration formats intact.
   int config_fd=open(ETAHEN_CONFIG_PATH,O_WRONLY|O_CREAT|O_EXCL,0666);
   if(config_fd>=0){
-    const char defaults[]="[Settings]\nPS5Debug=0\nFTP=1\ntoolbox_auto_start=1\nDPI=0\nDPI_v2=0\nKlog=0\nAllow_data_in_sandbox=1\noverlay_ram=0\noverlay_cpu=0\noverlay_gpu=0\noverlay_fps=0\n";
+    const char defaults[]="[Settings]\nPS5Debug=0\nFTP=1\ntoolbox_auto_start=1\nDPI=0\nDPI_v2=1\nKlog=0\nAllow_data_in_sandbox=1\noverlay_ram=0\noverlay_cpu=0\noverlay_gpu=0\noverlay_fps=0\n";
     bool written=write(config_fd,defaults,sizeof(defaults)-1)==sizeof(defaults)-1;close(config_fd);
     if(!written){unlink(ETAHEN_CONFIG_PATH);notify("Unable to write the port configuration");return -1;}
   }else if(errno!=EEXIST){notify("Unable to open the port configuration");return -1;}
@@ -992,6 +1050,14 @@ int main(void) {
 
   klog_puts("   Success!");
 
+  if (kernel_mode_request) {
+    port_stage("bootstrap","before hypervisor chain");
+    if (!run_hypervisor_chain(sys_ver)) {
+      port_safety::mark_kernel_mode_active(false);
+      notify("etaHEN continues in userland mode; kernel mode was not activated");
+    }
+  }
+
 #if 1
   port_stage("bootstrap","update unmount finished; before kstuff inspection");
   char buz[100] = { 0 };
@@ -1027,20 +1093,19 @@ int main(void) {
       port_result("bootstrap","kstuff spawn pid",kstuff_pid,kstuff_pid<0?errno:0);
       if (kstuff_pid >= 0) {
           int wait = 0;
-          bool kstuff_not_loaded = false;
-          sleep(1);
-          while ((kstuff_not_loaded = sceKernelMprotect(&buz[0], 100, 0x7) < 0)) {
-              if (wait++ > 10) {
-                  notify("Failed to load kstuff, kstuff will be unavailable");
-                  break;
-              }
-              sleep(1);
+          bool kstuff_not_loaded = true;
+          for (wait = 0; wait < 100; wait++) {
+              kstuff_not_loaded = sceKernelMprotect(&buz[0], 100, 0x7) < 0;
+              if (!kstuff_not_loaded) break;
+              usleep(50000);
           }
 
           port_result("bootstrap","kstuff readiness",kstuff_not_loaded?-1:0,0);
-          port_result("bootstrap","kstuff wait seconds",wait,0);
+          port_result("bootstrap","kstuff wait ms",wait*50,0);
           if (!kstuff_not_loaded)
               klog_puts("kstuff loaded");
+          else
+              notify("Failed to load kstuff, kstuff will be unavailable");
 
           if (cleanup_kstuff) {
               free(kstuff_address);
@@ -1050,7 +1115,6 @@ int main(void) {
           notify("Failed to load kstuff, kstuff will be unavailable");
       }
   }
-  sleep(1);
 #endif
 
   klog_printf("Starting Utility etaHEN services ...");
@@ -1126,8 +1190,13 @@ int main(void) {
   port_stage("bootstrap","before plugin discovery");
   char **plugin_paths = find_plugin_files();
   port_result("bootstrap","plugin count",plugin_count,0);
+  const bool plugins_allowed = !safety_mode && !port_safety::skip_plugins();
+  if (!plugins_allowed && plugin_count > 0) {
+    notify("Safety mode: plugin auto-start skipped");
+    port_safety::append_log(port_safety::kCrashLog, "safety", "plugin auto-start skipped");
+  }
   bool plugins_ready=false;
-  if(plugin_count>0){
+  if(plugin_count>0 && plugins_allowed){
     for(int tick=0;tick<600;tick++){
       FILE *f=fopen(PORT_STARTUP_PATH,"rb");PortStartupRecord record;
       bool valid=port_read_startup(f,record);if(f)fclose(f);
@@ -1137,19 +1206,25 @@ int main(void) {
     }
     if(!plugins_ready)notify("Plugin auto-start skipped: etaHEN startup did not confirm readiness");
   }
-  if (plugin_paths && plugin_count > 0 && plugins_ready) {
+  if (plugin_paths && plugin_count > 0 && plugins_ready && plugins_allowed) {
     int loaded_plugins = 0;
     // First, load all plugins except elfldr.plugin
     for (int i = 0; i < plugin_count; i++) {
       // Skip loading elfldr.plugin in this loop
       if (strcmp(loaded_filenames[i], "elfldr.plugin") != 0) {
-          klog_printf("Loading plugin: %s\n", plugin_paths[i]);
+        if (port_safety::plugin_quarantined(plugin_paths[i])) {
+          klog_printf("Skipping quarantined plugin: %s\n", plugin_paths[i]);
+          continue;
+        }
+
+        klog_printf("Loading plugin: %s\n", plugin_paths[i]);
         if (!load_plugin(plugin_paths[i], loaded_filenames[i])) {
           snprintf(buff, sizeof(buff),
                    "[etaHEN] Failed to load plugin!\nPath: %s",
                    plugin_paths[i]);
           notify(buff);
           klog_puts("FAILED!");
+          port_safety::quarantine_plugin(plugin_paths[i], "load failed");
           continue;
         }
 
@@ -1166,6 +1241,8 @@ int main(void) {
   // raise(SIGKILL, getpid());
   // sceSystemServiceLoadExec("exit", NULL);
   klog_puts("============== Spawner (Bootstrapper) Finished =================");
+  port_safety::mark_boot_ok();
+
 #ifdef ETAHEN_PORT_1360
   port_stage("bootstrap","RUN bootstrap complete; services dispatched, readiness is separate");
   puts("Both etaHEN services spawned; check Toolbox initialization separately");

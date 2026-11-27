@@ -7,7 +7,7 @@ for(const args of [
  ['--test','tests/*.test.mjs'],
  ['scripts/build-core.mjs'],['scripts/build-shellui.mjs'],
  ['scripts/build-native-fps.mjs'],['scripts/build-bc-fps.mjs'],['scripts/build-services.mjs','daemon'],
- ['scripts/build-services.mjs','util'],['scripts/build-toolbox-card.mjs'],['scripts/build-private-watch.mjs'],['scripts/build-bootstrapper.mjs'],
+ ['scripts/build-services.mjs','util'],['scripts/build-toolbox-card.mjs'],['scripts/build-private-watch.mjs'],['scripts/build-byepervisor-reborn.mjs'],['scripts/build-bootstrapper.mjs'],
  ['scripts/build-preflight.mjs'],['scripts/build-audit.mjs'],
  ['scripts/build-toolbox-launch.mjs'],
  ['scripts/build-limiter-plugin.mjs'],

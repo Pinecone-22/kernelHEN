@@ -1,23 +1,23 @@
 # 13.60 kstuff / etaHEN / ShadowMount integration
 
 The September 30, 2026 source review identified an incompatible pause mechanism.
-The candidate pair keeps kstuff-lite active and removes legacy pointer-tag
+The candidate pair keeps kstuff active and removes legacy pointer-tag
 control from etaHEN and the 13.60 ShadowMount build. This is a local candidate,
 not a replacement for the currently hosted binaries yet.
 
 ## Exact inputs
 
 - etaHEN 13.60 port: this repository, based on LightningMods' etaHEN 2.5B.
-- [EchoStretch/kstuff-lite v1.11](https://github.com/EchoStretch/kstuff-lite/releases/tag/v1.11),
+- [EchoStretch/kstuff 1.15-dr-test3-stable](https://github.com/EchoStretch/kstuff/releases/tag/1.15-dr-test3-stable),
   tag commit `85fb88a526e58e357d6f1e626ce05af4acdb8b5d`.
-  Embedded ELF SHA-256: `ab9a6cb4d3b1daf139d4d646e402b1cf569071acd64599c936d7a3a6164dc779`.
+  Embedded ELF SHA-256: `6c3758c2cc84e3aa7e3c41952371fd04e641647d46d03f8d4bea2ab77c16ecf5`.
 - [drakmor/ShadowMountPlus 1.7beta2](https://github.com/drakmor/ShadowMountPlus/releases/tag/1.7beta2).
   Upstream ELF SHA-256: `3f716a7b2220c7e87e87452ae05cad689ef842d3beb4cdad6c526cb6dfc2b6b5`.
   Custom version: `1.7beta2-snipers1360-r1`.
 
 ## Finding and correction
 
-In kstuff-lite `ps5-kstuff/main.c`, `USE_INT3_SYSCALL_HOOK` is enabled.
+In kstuff `ps5-kstuff/main.c`, `USE_INT3_SYSCALL_HOOK` is enabled.
 Installation creates copied PS4/PS5 syscall tables and replaces selected
 `sy_call` entries with the INT3 dispatcher. The published pointers to those
 tables are canonical (`0xffff` high word) while kstuff is **active**.
@@ -46,7 +46,7 @@ changes, config reloads, sleep and shutdown. Mount scanning, game registration,
 ShellCore hooks, image handling, KEKCALL_CHECK and remote mprotect remain in the
 build. Other firmware retains upstream control logic, but this candidate is
 intended for the 13.60 bundle. The legacy auto-pause performance feature is
-intentionally unavailable with this kstuff-lite integration.
+intentionally unavailable with this kstuff integration.
 
 **No custom kstuff binary is needed for this correction.** Its exact upstream
 ELF remains embedded. A future true INT3 pause feature needs a documented

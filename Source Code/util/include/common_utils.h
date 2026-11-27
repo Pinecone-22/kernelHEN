@@ -234,6 +234,10 @@ typedef struct {
     Flag check_flag;
 } LncAppParam;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int sceUserServiceGetForegroundUser(int *userId);
 int sceLncUtilLaunchApp(const char* tid, const char* argv[], LncAppParam* param);
 uint32_t sceLncUtilKillApp(uint32_t appId);
@@ -261,3 +265,7 @@ void notify(bool show_watermark, const char *text, ...);
 int sceNetCtlInit(void);
 int sceUserServiceInitialize(void *ptr);
 bool patchShellCore(void);
+
+#ifdef __cplusplus
+}
+#endif

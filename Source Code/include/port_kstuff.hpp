@@ -15,7 +15,7 @@ inline PortKstuffSnapshot port_read_kstuff_state(){
   !kernel_copyout(base+profile->cryptSingletonArray+11*8+9*8+6,&s.hmac,sizeof(s.hmac));
  return s;
 }
-// Public kstuff-lite v1.11 offsets/13_60.h and installation markers.
+// Public kstuff 1.15-dr-test3-stable offsets/13_60.h and installation markers.
 // A process name alone cannot establish that kernel hooks were installed.
 inline bool port_kstuff_hooks_installed(){
  return port_read_kstuff_state().classify(KERNEL_ADDRESS_DATA_BASE)==PortKstuffState::Installed;
