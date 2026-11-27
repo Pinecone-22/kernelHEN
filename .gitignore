@@ -29,3 +29,6 @@
 Thumbs.db
 
 /Source Code/.gitmodules
+
+!/Source Code/bootstrapper/assets/kstuff.elf
+

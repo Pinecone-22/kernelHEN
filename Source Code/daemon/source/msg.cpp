@@ -153,7 +153,7 @@ static bool remount(const char *dev, const char *path, int mnt_flag) {
 bool pause_resume_kstuff()
 {
 #ifdef ETAHEN_PORT_1360
-  etaHEN_log("Legacy kstuff toggle skipped: bundled kstuff-lite v1.11 uses INT3 tables");
+  etaHEN_log("Legacy kstuff toggle skipped: bundled kstuff 1.15-dr-test3-stable uses INT3 tables");
   return false;
 #endif
   intptr_t sysentvec = 0;
@@ -249,7 +249,7 @@ bool pause_resume_kstuff()
     break;
 
   case 0x13600000:
-      // EchoStretch/kstuff-lite v1.11, prosper0gdb/offsets/13_60.h.
+      // EchoStretch/kstuff 1.15-dr-test3-stable, prosper0gdb/offsets/13_60.h.
       sysentvec = KERNEL_ADDRESS_DATA_BASE + 0xDDD8F8;
       sysentvec_ps4 = KERNEL_ADDRESS_DATA_BASE + 0xDDDA70;
     break;

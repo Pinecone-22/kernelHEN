@@ -573,7 +573,7 @@ void handleIPC(struct clientArgs *client, std::string &inputStr,
 #ifdef ETAHEN_PORT_1360
       // This port deliberately ignores external kstuff. Do not fetch a
       // different project's "latest" asset and report a fictitious upgrade.
-      notify(true, "13.60 uses bundled kstuff-lite v1.11. Update etaHEN to change kstuff.");
+      notify(true, "13.60 uses bundled kstuff 1.15-dr-test3-stable. Update etaHEN to change kstuff.");
       reply(sender_app, true);
 #else
       notify(true, "Attempting to Download kstuff ...");

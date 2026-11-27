@@ -437,7 +437,7 @@ static void cleanup(void);
   uint8_t* get_kstuff_address(bool& require_cleanup) {
 #ifdef ETAHEN_PORT_1360
       // A leftover /data/etaHEN/kstuff.elf may target an older firmware.
-      // This build pins the embedded kstuff-lite v1.11 by SHA256.
+      // This build pins the embedded kstuff 1.15-dr-test3-stable by SHA256.
       require_cleanup = false;
       return kstuff_start;
 #else
@@ -811,7 +811,7 @@ int main(void) {
   }
   const auto* diagnostic_profile=snipers_firmware_profile(kernel_get_fw_version());
   char profile_detail[512];
-  snprintf(profile_detail,sizeof profile_detail,"profile=%s allproc=%lx security=%lx rootvnode=%lx textDelta=%lx sysentvec=%lx sysentvecPs4=%lx crypt=%lx sysents=%lx sysentsPs4=%lx pager=%lx kstuff=v1.11",
+  snprintf(profile_detail,sizeof profile_detail,"profile=%s allproc=%lx security=%lx rootvnode=%lx textDelta=%lx sysentvec=%lx sysentvecPs4=%lx crypt=%lx sysents=%lx sysentsPs4=%lx pager=%lx kstuff=1.15-dr-test3-stable",
     diagnostic_profile->name,diagnostic_profile->allproc,diagnostic_profile->security,diagnostic_profile->rootvnode,diagnostic_profile->textDelta,diagnostic_profile->sysentvec,diagnostic_profile->sysentvecPs4,diagnostic_profile->cryptSingletonArray,diagnostic_profile->sysents,diagnostic_profile->sysentsPs4,diagnostic_profile->pagerTable);
   port_stage("bootstrap",profile_detail);
   const pid_t existing_etahen = find_pid("etaHEN");

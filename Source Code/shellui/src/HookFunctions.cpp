@@ -383,8 +383,8 @@ void CallDecrypt(unsigned char* bundleData, int bundleOffset, int bundleSize, in
 void pause_resume_kstuff(KstuffPauseStatus opt, bool notify_user)
 {
 #ifdef ETAHEN_PORT_1360
-  shellui_log("Legacy kstuff toggle skipped: bundled kstuff-lite v1.11 uses INT3 tables");
-  if(notify_user && opt!=NOT_PAUSED)notify("kstuff-lite stays active; legacy pause is not supported by this build");
+  shellui_log("Legacy kstuff toggle skipped: bundled kstuff 1.15-dr-test3-stable uses INT3 tables");
+  if(notify_user && opt!=NOT_PAUSED)notify("kstuff stays active; legacy pause is not supported by this build");
   return;
 #endif
   intptr_t sysentvec = 0;
@@ -491,7 +491,7 @@ void pause_resume_kstuff(KstuffPauseStatus opt, bool notify_user)
     break;
  
   case 0x13600000:
-      // EchoStretch/kstuff-lite v1.11, prosper0gdb/offsets/13_60.h.
+      // EchoStretch/kstuff 1.15-dr-test3-stable, prosper0gdb/offsets/13_60.h.
       sysentvec = KERNEL_ADDRESS_DATA_BASE + 0xDDD8F8;
       sysentvec_ps4 = KERNEL_ADDRESS_DATA_BASE + 0xDDDA70;
     success = true;
@@ -1802,7 +1802,7 @@ int OnPress_Hook(MonoObject* Instance, MonoObject* element, MonoObject* e)
     }
     else if (id == "id_pause_kstuff"){
 #ifdef ETAHEN_PORT_1360
-        notify("kstuff-lite stays active; legacy pause is not supported by this build");
+        notify("kstuff stays active; legacy pause is not supported by this build");
         return oOnPress(Instance, element, e);
 #endif
         if (atoi(value.c_str()) == kstuff_pause_opt) {

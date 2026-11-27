@@ -3,8 +3,8 @@
   "inputs": [
     {
       "path": "Source Code/bootstrapper/assets/kstuff.elf",
-      "bytes": 1737080,
-      "sha256": "ab9a6cb4d3b1daf139d4d646e402b1cf569071acd64599c936d7a3a6164dc779"
+      "bytes": 1927240,
+      "sha256": "6c3758c2cc84e3aa7e3c41952371fd04e641647d46d03f8d4bea2ab77c16ecf5"
     },
     {
       "path": "Source Code/daemon/assets/ps5debug.elf",

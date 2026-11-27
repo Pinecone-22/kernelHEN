@@ -6,9 +6,9 @@ The tested build used Windows x64, Node.js 24, Zig 0.14.1 and the [PS5 payload S
 
 This source repository excludes compilers, SDKs, static libraries and upstream prebuilt payloads. Obtain the inputs from their original projects, preserve their licenses, and compare against `BUILD-INPUTS.json` when reproducing the tested build:
 
-- `Source Code/bootstrapper/assets/kstuff.elf`: [EchoStretch/kstuff-lite v1.11](https://github.com/EchoStretch/kstuff-lite/releases/tag/v1.11).
+- `Source Code/bootstrapper/assets/kstuff.elf`: [EchoStretch/kstuff 1.15-dr-test3-stable](https://github.com/EchoStretch/kstuff/releases/tag/1.15-dr-test3-stable).
 - `Source Code/daemon/assets/ps5debug.elf`: [Pharaoh2k/ps5debug-NG 1.3.2](https://github.com/Pharaoh2k/ps5debug-NG/releases).
-- `Source Code/daemon/assets/ps5-app-dumper.elf`: [EchoStretch/ps5-app-dumper v1.11](https://github.com/EchoStretch/ps5-app-dumper/releases).
+- `Source Code/daemon/assets/ps5-app-dumper.elf`: [EchoStretch/ps5-app-dumper 1.15-dr-test3-stable](https://github.com/EchoStretch/ps5-app-dumper/releases).
 - `Source Code/lib/`: matching PS5 builds of `libz.a`, `libcurl.a`, `libwolfssl.a`, `libminizip.a`, `libmicrohttpd.a`, `libpsl.a`, and `libzstd.a` from the upstream etaHEN build inputs. Host Windows/Linux archives cannot substitute for these.
 - `dependencies/lib/`: PS5 SDK homebrew builds of `libcrypto.a`, `libssl.a` and `libsqlite3.a`. The tested OpenSSL build was 3.5.2. The [PS5 payload SDK packages](https://github.com/ps5-payload-dev) provide the PS5 cross-build ecosystem; the manifest records the exact archives used locally.
 
